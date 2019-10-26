@@ -1,0 +1,330 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: slide-api
+  license:
+    name: MIT
+servers:
+  - url: localhost/v1
+paths:
+  /slides:
+    get:
+      summary: スライドリスト
+      tags:
+        - slides
+      parameters:
+        - $ref: '#/components/parameters/OffsetId'
+        - $ref: '#/components/parameters/Count'
+        - $ref: '#/components/parameters/Tag'
+        - $ref: '#/components/parameters/Word'
+      responses:
+        '200':
+          description: スライドリストを返却する
+          headers:
+            next-offset-id:
+              description: 次のOffsetId
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Slides"
+        default:
+          description: エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: スライド投稿
+      tags:
+        - slides
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  description: スライドタイトル
+                  type: string
+                description:
+                  description: スライド説明
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Tag"
+                items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ItemData"
+      responses:
+        '200':
+          description: スライドリストの投稿結果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlideInformation"
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /slides/{slideId}:
+    get:
+      summary: スライド閲覧
+      tags:
+        - slides
+      parameters:
+        - $ref: '#/components/parameters/SlideId'
+      responses:
+        '200':
+          description: スライド詳細
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlideInformation"
+        default:
+          description: エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      summary: スライド更新
+      tags:
+        - slides
+      parameters:
+        - $ref: '#/components/parameters/SlideId'
+        - $ref: '#/components/parameters/Version'
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  description: スライドタイトル
+                  type: string
+                description:
+                  description: スライド説明
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/Tag"
+                items:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/ItemData"
+      responses:
+        '200':
+          description: スライドリストの更新結果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlideInformation"
+        default:
+          description: エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: スライド削除
+      tags:
+        - slides
+      parameters:
+        - $ref: '#/components/parameters/SlideId'
+        - $ref: '#/components/parameters/Version'
+      responses:
+        '200':
+          description: スライドリストの削除結果
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Slides"
+        default:
+          description: エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  parameters:
+    OffsetId:
+      in: query
+      name: offsetId
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+      description: リストの開始位置
+    Count:
+      in: query
+      name: count
+      required: false
+      schema:
+        type: integer
+        minimum: 20
+        maximum: 100
+      description: リストで返す数
+    Tag:
+      in: query
+      name: tag
+      required: false
+      schema:
+        type: string
+      description: タグで絞る
+    Word:
+      in: query
+      name: word
+      required: false
+      schema:
+        type: string
+      description: 単語で絞る
+    Version:
+      in: query
+      name: version
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+      description: リストの開始位置
+    SlideId:
+      name: slideId
+      in: path
+      description: スライドID
+      required: true
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+    Slides:
+      type: array
+      items:
+        $ref: "#/components/schemas/Slide"
+    Slide:
+      required:
+        - id
+        - title
+        - description
+        - thumbnail
+        - version
+      properties:
+        id:
+          description: スライドID
+          type: integer
+          format: int64
+        title:
+          description: スライドタイトル
+          type: string
+        description:
+          description: スライド説明
+          type: string
+        thumbnail:
+          description: スライドのサムネイルURL
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tag"
+        version:
+          description: バージョンID
+          type: integer
+          format: int64
+    Tag:
+      required:
+        - id
+        - name
+      properties:
+        id:
+          description: タグID
+          type: integer
+          format: int64
+        name:
+          description: タグテキスト
+          type: string
+    SlideInformation:
+      required:
+        - id
+        - title
+        - description
+        - thumbnail
+        - tags
+        - items
+      properties:
+        id:
+          description: スライドID
+          type: integer
+          format: int64
+        title:
+          description: スライドタイトル
+          type: string
+        description:
+          description: スライド説明
+          type: string
+        thumbnail:
+          description: スライドのサムネイルURL
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tag"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Item"
+    Item:
+      required:
+        - id
+        - thumbnail
+        - slide_no
+        - type
+      properties:
+        id:
+          description: ID
+          type: string
+        thumbnail:
+          description: URL
+          type: string
+        slide_no:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum:
+            - img
+            - md
+    ItemData:
+      required:
+        - slide_no
+        - type
+      properties:
+        slide_no:
+          type: integer
+          format: int64
+        type:
+          type: string
+          enum:
+            - img
+            - md
+        md:
+          type: string
+        data:
+          type: string
+          format: binary
